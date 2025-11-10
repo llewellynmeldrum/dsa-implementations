@@ -21,36 +21,38 @@ OBJ_EXT :=.o
 
 
 # compiler: goto 1-1 for info on excluding files
-CC_C	:=g++ -O0 
+CXX	:=g++
 SRC 	:=$(wildcard $(SRC_DIR)/*$(SRC_EXT)) 
-OBJS := $(patsubst $(SRC_DIR)/%$(SRC_EXT),$(OBJ_DIR)/%$(OBJ_EXT),$(SRC))
+OBJS 	:= $(patsubst $(SRC_DIR)/%$(SRC_EXT),$(OBJ_DIR)/%$(OBJ_EXT),$(SRC))
 
 
 # flags for the compiler only 
-CCFLAGS	:=-Iinclude
-ASAN_OPTIONS:=
-LDFLAGS	:=
-LDLIBS	:=
-ALLFLAGS:=-std=c++20
+CXXFLAGS	:=-Iinclude $(shell pkg-config --cflags fmt)
+LDFLAGS		:=$(shell pkg-config --libs fmt)
+LDLIBS		:=
+ALLFLAGS	:=-std=c++20 -O0
 
-CC_C+=$(ALLFLAGS)
+ASAN_OPTIONS	:= 
+
+
+CXX+=$(ALLFLAGS)
 
 
 $(OBJ_DIR)/%$(OBJ_EXT) : $(SRC_DIR)/%$(SRC_EXT)
 	@$(ECHO_COMP_BANNER)
-	$(CC_C) $(CCFLAGS) -c $< -o $@ 
+	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 # build executable (linking obj -> bin)
 $(EXE): $(OBJ_DIR) $(OBJS)
 	@$(ECHO_LINK_BANNER)
-	$(CC_C) $(LDFLAGS) $(OBJS) -o $(EXE) $(LDLIBS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o $(EXE) $(LDLIBS)
 
 # executing binary
 run: $(EXE)
 	@$(ECHO_EXE_BANNER)
 	ASAN_OPTIONS=$(ASAN_OPTIONS) ./$(EXE) $(ARGS)
 
-leaks: CCFLAGS  += -g 
+leaks: CXXFLAGS  += -g 
 leaks: LDFLAGS +=  -g
 leaks: $(EXE)
 	@$(ECHO_EXE_BANNER)
@@ -70,29 +72,29 @@ debug: $(EXE)
 
 	
 # Address san: lower overhead than thread-san, cleaner stack traces,
-asan: CCFLAGS  += -fsanitize=address -fno-omit-frame-pointer
+asan: CXXFLAGS  += -fsanitize=address -fno-omit-frame-pointer
 asan: LDFLAGS += -fsanitize=address
 asan: LDLIBS  += -fsanitize=address
 asan: ASAN_OPTIONS += abort_on_error=1
 asan: clean run 
 
-usan: CCFLAGS  += -fsanitize=undefined -fno-omit-frame-pointer 
+usan: CXXFLAGS  += -fsanitize=undefined -fno-omit-frame-pointer 
 usan: LDFLAGS += -fsanitize=undefined 
 usan: LDLIBS  += -fsanitize=undefined 
 usan: clean run 
 
 
-ausan: CCFLAGS  += -g -fsanitize=address,undefined -fno-omit-frame-pointer
+ausan: CXXFLAGS  += -g -fsanitize=address,undefined -fno-omit-frame-pointer
 ausan: LDFLAGS += -fsanitize=address,undefined -g
-ausan: CCFLAGS+= -fsanitize-address-use-after-scope
+ausan: CXXFLAGS+= -fsanitize-address-use-after-scope
 ausan: clean run
 
-tsan: CCFLAGS  += -fsanitize=thread -fno-omit-frame-pointer 
+tsan: CXXFLAGS  += -fsanitize=thread -fno-omit-frame-pointer 
 tsan: LDFLAGS += -fsanitize=thread
 tsan: LDLIBS  += -fsanitize=thread
 tsan: clean run 
 
-lsan: CCFLAGS  += -fsanitize=address,undefined -fno-omit-frame-pointer 
+lsan: CXXFLAGS  += -fsanitize=address,undefined -fno-omit-frame-pointer 
 lsan: LDFLAGS += -fsanitize=address,undefined
 lsan: ASAN_OPTIONS+=detect_leaks=1
 lsan: clean run 
@@ -118,10 +120,10 @@ HELP:
 	@$(FMT_ALT2)	printf "OBJ_DIR  = $(OBJ_DIR)\n"
 	@$(FMT_ALT1)	printf "SRC_EXT  = $(SRC_EXT)\n"
 	@$(FMT_ALT2)	printf "OBJ_EXT  = $(OBJ_EXT)\n"
-	@$(FMT_ALT1)	printf "CC_C     = $(CC_C)\n"
+	@$(FMT_ALT1)	printf "CXX     = $(CXX)\n"
 	@$(FMT_ALT2)	printf "SRC      = $(SRC)\n"
 	@$(FMT_ALT1)	printf "OBJS     = $(OBJS)\n"
-	@$(FMT_ALT2)	printf "CCFLAGS  = $(CCFLAGS)\n"
+	@$(FMT_ALT2)	printf "CXXFLAGS  = $(CXXFLAGS)\n"
 	@$(FMT_ALT1)	printf "LDFLAGS  = $(LDFLAGS)\n"
 	@$(FMT_ALT2)	printf "LDLIBS   = $(LDLIBS)\n"
 	@$(FMT_ALT1)	printf "ALLFLAGS = $(ALLFLAGS)\n"
