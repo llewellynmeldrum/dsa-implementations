@@ -37,15 +37,12 @@ int main() {
 
 
 void test_BinaryTree() {
-	// TODO: normal tests, if i have spare time somehow i can do the other thing
-	// p
-
 TEST_BT_LEETCODE_STYLE_CTOR: {
 		// cases from LC144, 94 and 145
 		// (https://leetcode.com/problems/binary-tree-preorder-traversal/description/)
 		// (https://leetcode.com/problems/binary-tree-inorder-traversal/description/)
 		// (https://leetcode.com/problems/binary-tree-postorder-traversal/description/)
-		//
+
 		const std::string s1 = "[1,null,2,3]";
 		const std::string s2 = "[1,2,3,4,5,null,8,null,null,6,7,9]";
 		auto tree = BinaryTree<int>(s1);
