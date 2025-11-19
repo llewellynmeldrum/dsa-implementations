@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <source_location>
 #include <iostream>
 #include <sstream>
@@ -13,16 +14,15 @@
 #include "ansi_colors.hpp"
 #include "LMUtils.hpp"
 
-struct G {
-	static size_t TOTAL_PASS_COUNT;
-	static size_t TOTAL_FAIL_COUNT;
-	static size_t SUCCESSFUL_GROUPS;
-	static size_t FAILING_GROUPS;
-};
+extern size_t N_PASSED_TESTS;
+extern size_t N_FAILED_TESTS;
+extern size_t N_PASSED_GROUPS;
+extern size_t N_FAILED_GROUPS;
 
 
 template<typename T>
-struct TestGroup {
+class TestGroup {
+  public:
 	using srcloc = std::source_location;
 	std::string suite_name;
 	bool verbose = false;
@@ -44,67 +44,11 @@ struct TestGroup {
 
 		std::cerr << ansi::reset;
 	};
-
-
-	void log_success(std::string name, T expects, T result) {
-		std::cerr        << ansi::green <<  "\nTEST '" << ansi::reset << name
-		                 << ansi::green << "' PASSED:\n" << ansi::reset;
-		std::cerr << ansi::bold << ansi::green << "\tEXPECTED --> " << ansi::reset << val_to_str(expects) << std::endl ;
-		std::cerr << ansi::bold << ansi::green << "\t     GOT --> " << ansi::reset << val_to_str(result) << std::endl ;
-	}
-
-	void log_failure(std::string name, T expects, T result, srcloc err) {
-		int rnu = err.line() - LM::get_line_number(err.file_name(), err.function_name());
-		std::cerr << ansi::reset
-		          << ansi::red <<  "\nTEST " << ansi::reset
-		          << name
-		          << ansi::red << " FAILED: "
-		          << ansi::underline << err.file_name() << ':' << err.line() << std::endl
-		          << ansi::reset << ansi::red << "IN FUNCTION: "
-		          << ansi::underline  << err.function_name() << ":" << rnu << std::endl
-		          << ansi::reset;
-
-		std::cerr << ansi::bold << ansi::red << "\tEXPECTED --> " << ansi::reset << val_to_str(expects) << std::endl ;
-		std::cerr << ansi::bold << ansi::red << "\t     GOT --> " << ansi::reset << val_to_str(result) << std::endl ;
-		if constexpr (std::is_same_v<std::string, T>) {
-			std::cerr << "\t             " << markDiff(expects, result) << std::endl << ansi::reset ;
-		}
-
-
-	}
-
-	std::string markDiff(std::string a, std::string b) {
-		std::cerr << ansi::red;
-		auto& longer = (a.size() >= b.size() ? a : b);
-		char marker = '^';
-		std::string markers{};
-		markers.resize(longer.size());
-		for (int i = 0; i < markers.size(); i++) {
-			if (i < a.size() && i < b.size()) {
-				markers[i] = (a[i] == b[i] ? ' ' : marker);
-			} else {
-				markers[i] = marker;
-			}
-		}
-		return markers;
-	}
-
-	std::string val_to_str(const T val) const {
-		std::ostringstream oss;
-		if constexpr(std::is_same_v<T, bool>) {
-			oss << (val == true ? "TRUE" : "FALSE");
-		} else {
-			oss << val;
-		}
-		return oss.str();
-	}
-
-
 	~TestGroup() {
 		std::cerr << summary_msg() << std::endl;
 		std::cerr << ansi::reset;
-		G::SUCCESSFUL_GROUPS 	+= (fail_count == 0);
-		G::FAILING_GROUPS 	+= (fail_count > 0);
+		N_PASSED_GROUPS 	+= (fail_count == 0);
+		N_FAILED_GROUPS 	+= (fail_count > 0);
 	}
 
 	inline std::string summary_msg() {
@@ -134,9 +78,7 @@ struct TestGroup {
 		}
 		return oss.str();
 	}
-
-
-#define run_test(name, expected, result) /* wrapper macro to grab source_location */\
+#define run_test(name, expected, result) /* wrapper macro to grab source_location::current() */\
 	_RUN_TEST(name, expected, result, std::source_location::current())
 
 	inline bool _RUN_TEST(std::string name, T expects, T result, std::source_location loc) {
@@ -146,7 +88,7 @@ struct TestGroup {
 			failed_test_names.push_back(name);
 			log_failure(name, expects, result, loc);
 			++fail_count;
-			++G::TOTAL_FAIL_COUNT;
+			++N_FAILED_TESTS;
 			return false;
 		} else {
 			if (verbose) log_success(name, expects, result);
@@ -154,8 +96,98 @@ struct TestGroup {
 		}
 
 		++pass_count;
-		++G::TOTAL_PASS_COUNT;
+		++N_PASSED_TESTS;
 		return true;
 	}
+
+
+  private:
+
+	void log_success(std::string name, T expects, T result) {
+		std::cerr        << ansi::green <<  "\nTEST '" << ansi::reset << name
+		                 << ansi::green << "' PASSED:\n" << ansi::reset;
+		std::cerr << ansi::bold << ansi::green << "\tEXPECTED --> " << ansi::reset << val_to_str(expects) << std::endl ;
+		std::cerr << ansi::bold << ansi::green << "\t     GOT --> " << ansi::reset << val_to_str(result) << std::endl ;
+	}
+
+	void log_failure(std::string name, T expects, T result, srcloc err) {
+		int rnu = err.line() - LM::get_line_number(err.file_name(), err.function_name());
+		std::cerr << ansi::reset
+		          << ansi::red <<  "\nTEST " << ansi::reset
+		          << name
+		          << ansi::red << " FAILED: "
+		          << ansi::underline << err.file_name() << ':' << err.line() << std::endl
+		          << ansi::reset << ansi::red << "IN FUNCTION: "
+		          << ansi::underline  << err.function_name() << ":" << rnu << std::endl
+		          << ansi::reset;
+
+		std::cerr << ansi::bold << ansi::red << "\tEXPECTED --> " << ansi::reset << val_to_str(expects) << std::endl ;
+		std::cerr << ansi::bold << ansi::red << "\t     GOT --> " << ansi::reset << val_to_str(result) << std::endl ;
+		if constexpr (std::is_same_v<std::string, T>) {
+			std::cerr << "\t              " << markDiff(expects, result) << std::endl << ansi::reset ;
+		}
+
+
+	}
+
+	std::string markDiff(std::string expected, std::string result) {
+
+		constexpr const char POISON_CH = 0x7F;
+		constexpr const char MARK = '^';
+		constexpr const char *WIDE_MARK = "/\\";
+		if (expected.size() != result.size()) {
+			/*
+			 if two strings are of different size, then necessarily, all characters
+			 beyond the limit of the shorter string will not match.
+			 Thus, we append the shorter string with DEL bytes to pad its size, which will never
+			 match a real string.
+			*/
+			auto& longer_str = (expected.size() >= result.size() ? expected : result);
+			auto& shorter_str = (expected.size() <= result.size() ? expected : result);
+			size_t diff = longer_str.size() - shorter_str.size();
+			shorter_str.append(diff, POISON_CH);
+		}
+
+		assert(expected.size() == result.size());
+		std::ostringstream marker_line;
+		marker_line << ansi::red;
+		for (int i = 0; i < expected.size(); i++) {
+			if (expected[i] == result[i]) marker_line << ' ';
+			else {
+				if (expected[i] == '\r' || expected[i] == '\n' || expected[i] == '\t') {
+					// handle special cases which are drawn as 2 chars. See LM::string::toLiterals
+					marker_line << WIDE_MARK;
+				} else {
+					marker_line << MARK;
+				}
+			}
+		}
+		return marker_line.str();
+	}
+
+	std::string val_to_str(const T val) const {
+		// handle some special cases
+		std::ostringstream prefix;
+		std::ostringstream suffix;
+		std::ostringstream oss;
+		if constexpr(std::is_same_v<T, bool>) {
+			oss << (val == true ? "TRUE" : "FALSE");
+		} else if constexpr (std::is_same_v<T, std::string>) {
+			std::ostringstream val_str;
+			prefix << "'";
+			suffix << "'";
+			val_str << val;
+			oss << LM::string::toLiterals(val_str.str());
+		} else {
+			oss << val;
+		}
+
+		return prefix.str() +  oss.str() + suffix.str() + ansi::reset;
+	}
+
+
+
+
+
 
 };
