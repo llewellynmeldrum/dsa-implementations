@@ -1,10 +1,13 @@
 #pragma once
+#include "ansi_colors.hpp"
 #include "fmt/color.h"
 #include <iostream>
 #include <fstream>
 #include <source_location>
 #include <fmt/core.h>
 #include <sstream>
+#include <utility>
+#include <array>
 #include <vector>
 #include <sys/ioctl.h>
 
@@ -50,17 +53,48 @@ class string {
 		return hex.str();
 	}
 
+	// apparently std::array requires two sets of curly braces for initializatin, no idea why
+	static constexpr std::array<std::pair<char, const char *>, 100> matches = {
+		{
+			{'\r', "\\r"},
+			{'\n', "\\n"},
+			{'\t', "\\t"},
+			{' ', "␣"},
+		}
+	};
+
+
 	static inline std::string toLiterals(const std::string& s) {
-		std::ostringstream os;
-		for (unsigned char c : s) {
-			if (c == '\r') os << "\r";
-			else if (c == '\n') os << "\n";
-			else if (c == '\t') os << "\t";
-			else
-				os << ' ' << c;
+		std::ostringstream oss;
+		auto fmt_norepl = []() -> std::string {
+			std::string fmt_str = ansi::bg_white;
+			fmt_str += ansi::black;
+			return fmt_str;
+		};
+
+		auto fmt_repl = []() -> std::string {
+			std::string fmt_str;
+			fmt_str += ansi::white;
+			fmt_str += ansi::black;
+			fmt_str += ansi::bold;
+			fmt_str += ansi::underline;
+			return fmt_str;
+		};
+		oss << fmt_norepl();
+
+		for (unsigned char ch : s) {
+			bool replaced = false;
+			for (const auto&[match, replacement] : matches) {
+				if (match == ch) {
+					replaced = true;
+					oss << fmt_repl() << replacement;
+				}
+			}
+
+			if (!replaced) oss << fmt_norepl() << ch;
 
 		}
-		return os.str();
+		return oss.str() + ansi::reset;
 	}
 
 	/// Returns the substring within `s` that starts at `left`, whose last character is `s[right-1]`
@@ -85,21 +119,31 @@ class string {
 		}
 		return s;
 	}
-	static inline std::vector<std::string> split(std::string& s, char delim) {
-		std::vector<std::string> tokens{};
+	// returns a vector of 'tokens' split by delimiter
+	static inline std::vector<std::string> &split(std::string& s, char delim) {
+		auto tokens = new std::vector<std::string>;
 		size_t end = 0;
-		while(end < s.size()) {
-			auto start = end + 1;
-			end = s.find(delim, start);
+		size_t start = 0;
+		std::cout << "splitting: '" << s << "'\n";
+		size_t iter = 0;
+		while(end >= start) {
+			start = end;
+			printf("[%02zu]start| end\n", iter++);
+			printf("    %02zu   | %02zu\n", start, end);
+			end = s.find(delim, start) + 1;
+			std::string tok = "";
 			if (end == std::string::npos) {
-				end = s.size() - 1;
-				auto tok = LM::string::between(s, start, end);
-				tokens.push_back(tok);
+				// capture the remaining token
+				tok = LM::string::between(s, start, s.size() - 1);
+				printf("    %02zu   | %02zu --> %s \n", start, s.size() - 1, tok.c_str());
+				tokens->push_back(tok);
 				break;
 			}
-			tokens.push_back(LM::string::between(s, start, end));
+			tok = LM::string::between(s, start, end - 1);
+			printf("    %02zu   | %02zu --> '%s' \n", start, end, tok.c_str());
+			tokens->push_back(tok);
 		}
-		return tokens;
+		return *tokens;
 	}
 };
 
