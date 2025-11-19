@@ -1,41 +1,30 @@
-#include "ansi_colors.hpp"
-#include <cassert>
-#include <iostream>
-#include <ostream>
-#include <queue>
-#include <sstream>
-#include <string>
-#include <strstream>
-#include <cmath>
-#include <source_location>
-#include <fstream>
-#include <variant>
-#include <vector>
-#include <unordered_set>
-
 #include "TestGroup.hpp"
-#include "LMUtils.hpp"
-#include <fmt/color.h>
+#include "ansi_colors.hpp"
 
 #include "LinkedList.hpp"
 #include "BinaryTree.hpp"
+#include "Graph.hpp"
+#include "LMUtils.hpp"
 
-size_t G::TOTAL_FAIL_COUNT = 0;
-size_t G::TOTAL_PASS_COUNT = 0;
-size_t G::FAILING_GROUPS = 0;
-size_t G::SUCCESSFUL_GROUPS = 0;
 
 void print_summary_info();
 void test_LinkedList();
 void test_BinaryTree();
+void test_Graphs();
+void test_LM_UTILS();
 
 int main() {
 	test_LinkedList();
 	test_BinaryTree();
+	test_Graphs();
+//	test_LM_UTILS();
 	print_summary_info();
 }
 
 
+void test_Graphs() {
+	DirectedGraph<int> graph("[[6,7],[1,3],[2,4],[1,3]]");
+}
 void test_BinaryTree() {
 TEST_BT_LEETCODE_STYLE_CTOR: {
 		// cases from LC144, 94 and 145
@@ -120,36 +109,41 @@ TEST_LL_UTILITY: {
 		utility.run_test("has_cycle() 2", true, list.has_cycle());
 	}
 }
-
-using fmt::print;
-using fmt::color;
-using fmt::emphasis;
-using fmt::text_style;
-
-#define printst(format, ...) fmt::print(style, format, ##__VA_ARGS__)
-
 void print_summary_info() {
-	text_style style;
-	size_t n_test_groups = G::SUCCESSFUL_GROUPS + G::FAILING_GROUPS;
-	size_t n_tests = G::TOTAL_PASS_COUNT + G::TOTAL_FAIL_COUNT;
+	size_t N_TEST_GROUPS = N_PASSED_GROUPS + N_FAILED_GROUPS;
+	size_t N_TESTS = N_PASSED_TESTS + N_FAILED_TESTS;
 
-	fmt::color head_col = G::FAILING_GROUPS ? color::red : color::green;
-	style = fg(head_col) | emphasis::bold | emphasis::reverse;
-	printst("TESTS SUMMARY:\n");
+	std::string title_color = ansi::green;
+	if (N_FAILED_GROUPS) title_color = ansi::red;
+
+	std::string body_color = ansi::reset;
+	if (N_FAILED_GROUPS) body_color = ansi::red;
 
 
-	style = {};
-	if (G::FAILING_GROUPS) style = fg(color::red);
-	print("     test groups: ");
-	printst("{}/{}",
-	        G::SUCCESSFUL_GROUPS, n_test_groups);
-	print(" completed without failure.\n");
 
-	style = {};
-	if (G::TOTAL_FAIL_COUNT)  style = fg(color::red);
-	print("individual tests: ");
-	printst("{}/{}",
-	        G::TOTAL_PASS_COUNT, n_tests);
-	print(" completed without failure.\n");
+
+	std::cout << title_color << ansi::bold << ansi::inverse
+	          << "TESTS SUMMARY:\n" << ansi::reset;
+	std::cout << body_color << ansi::bold;
+	printf("    test groups: %zu/%zu completed successfully.\n", N_PASSED_GROUPS,  N_TEST_GROUPS);
+	printf("          tests: %zu/%zu completed successfully.\n", N_PASSED_TESTS,  N_TESTS);
+	std::cout << ansi::reset;
 
 }
+
+void test_LM_UTILS() {
+	std::cout << "\n";
+
+	{
+		TestGroup<std::string> string_split("LM::String functions", true);
+		std::string str = "1,2,3";
+		auto& vec = LM::string::split(str, ',');
+		string_split.run_test("split[0]", "1", vec[0]);
+		string_split.run_test("split[1]", "2", vec[1]);
+		string_split.run_test("split[2]", "3", vec[2]);
+		string_split.run_test("split[3]", "", "");
+		TestGroup<int> string_split_len_test("LM::String Split Length Check", true);
+		string_split_len_test.run_test("split len", 3, vec.size());
+	}
+}
+
