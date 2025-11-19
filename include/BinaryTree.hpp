@@ -74,7 +74,6 @@ struct BinaryTree {
 		std::cout << s << std::endl;
 		s = LM::string::trim(s, " \r\n\t");
 		std::cout << s << std::endl;
-		auto tokens = LM::string::split(s, ',');
 
 		auto remainingStringsAreNull = [](const std::vector<std::string> &arr, size_t start) {
 			for (int i = start; i < arr.size(); i++) {
@@ -97,14 +96,10 @@ struct BinaryTree {
 		};
 
 
-		auto leftChildIndex = [](int i) {
-			return (i * 2) + 1;
-		};
-		auto rightChildIndex = [](int i) {
-			return (i * 2) + 2;
-		};
 
-
+		s.erase(0, 1);
+		s.erase(s.size() - 1, 1);
+		std::vector<std::string> &tokens = LM::string::split(s, ',');
 		std::queue<Node<T>*> q;
 		root = parse(tokens[0]);
 		q.push(root);
