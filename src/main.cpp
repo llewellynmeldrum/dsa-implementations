@@ -25,12 +25,14 @@ int main() {
 
 void test_Graphs() {
 	CFG::instance().testgroup_verbose_default = true;
-	DirectedGraph<int> g1("[[1,2],[1,3],[1,4],[3,1]]");
-	DirectedGraph<int> g2("[]");
+	DirectedGraph<int> basic("[[1,2],[1,3],[1,4],[3,1]]");
+	DirectedGraph<int> empty("[]");
+	DirectedGraph<int> one_node("[[1,null]]");
 	{
-		TestGroup<std::string> test("DIRECTED GRAPH: Leetcode style CTOR (1)");
-		test.run_test("Adjacency list equality", "o1->[2,3,4], 2->[], 3->[1], 4->[]", g1.adjacencyListToStr());
-		test.run_test("Adjacency list equality", "", g2.adjacencyListToStr());
+		TestGroup<std::string> test("DIRECTED GRAPH: Leetcode style CTOR, test adjacency list equality (1)");
+		test.run_test("Empty graph", "", empty.adjacencyListToStr());
+		test.run_test("Lonely node", "1->[0]", one_node.adjacencyListToStr());
+		test.run_test("Basic case", "1->[2,3,4], 2->[], 3->[1], 4->[]", basic.adjacencyListToStr());
 	}
 	CFG::instance().testgroup_verbose_default = false;
 }
