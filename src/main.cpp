@@ -1,5 +1,5 @@
-#include "TestGroup.hpp"
 #include "ansi_colors.hpp"
+#include "TestGroup.hpp"
 
 #include "LinkedList.hpp"
 #include "BinaryTree.hpp"
@@ -22,39 +22,47 @@ int main() {
 }
 
 
+
 void test_Graphs() {
-	DirectedGraph<int> graph("[[6,7],[1,3],[2,4],[1,3]]");
-}
-void test_BinaryTree() {
-TEST_BT_LEETCODE_STYLE_CTOR: {
-		// cases from LC144, 94 and 145
-		// (https://leetcode.com/problems/binary-tree-preorder-traversal/description/)
-		// (https://leetcode.com/problems/binary-tree-inorder-traversal/description/)
-		// (https://leetcode.com/problems/binary-tree-postorder-traversal/description/)
-
-		const std::string s1 = "[1,null,2,3]";
-		const std::string s2 = "[1,2,3,4,5,null,8,null,null,6,7,9]";
-		auto tree = BinaryTree<int>(s1);
-		auto tree2 = BinaryTree<int>(s2);
-		{
-			TestGroup<std::string> test("BINARY TREE: Leetcode style CTOR (1)", true);
-			test.run_test("BFS equality:", 			"[1,null,2,3]", tree.BFS_ToString());
-			test.run_test("DFS (preorder) equality:", 	"[1,2,3]", 	tree.DFS_PreOrderToString());
-			test.run_test("DFS (inorder) equality:", 	"[1,3,2]", 	tree.DFS_InOrderToString());
-			test.run_test("DFS (postorder) equality:", 	"[3,2,1]", 	tree.DFS_PostOrderToString());
-		}
-
-		{
-			TestGroup<std::string> test2("BINARY TREE: Leetcode style CTOR (2)", true);
-			test2.run_test("BFS equality:", 		"[1,2,3,4,5,null,8,null,null,6,7,9]", tree2.BFS_ToString());
-			test2.run_test("DFS (preorder) equality:", 	"[1,2,4,5,6,7,3,8,9]", 	tree2.DFS_PreOrderToString());
-			test2.run_test("DFS (inorder) equality:", 	"[4,2,6,5,7,1,3,9,8]", 	tree2.DFS_InOrderToString());
-			test2.run_test("DFS (postorder) equality:", 	"[4,6,7,5,2,9,8,3,1]", 	tree2.DFS_PostOrderToString());
-		}
-
-
-
+	CFG::instance().testgroup_verbose_default = true;
+	DirectedGraph<int> g1("[[1,2],[1,3],[1,4],[3,1]]");
+	DirectedGraph<int> g2("[]");
+	{
+		TestGroup<std::string> test("DIRECTED GRAPH: Leetcode style CTOR (1)");
+		test.run_test("Adjacency list equality", "o1->[2,3,4], 2->[], 3->[1], 4->[]", g1.adjacencyListToStr());
+		test.run_test("Adjacency list equality", "", g2.adjacencyListToStr());
 	}
+	CFG::instance().testgroup_verbose_default = false;
+}
+
+void test_BinaryTree() {
+	// cases from LC144, 94 and 145
+	// (https://leetcode.com/problems/binary-tree-preorder-traversal/description/)
+	// (https://leetcode.com/problems/binary-tree-inorder-traversal/description/)
+	// (https://leetcode.com/problems/binary-tree-postorder-traversal/description/)
+
+	const std::string s1 = "[1,null,2,3]";
+	const std::string s2 = "[1,2,3,4,5,null,8,null,null,6,7,9]";
+	auto tree = BinaryTree<int>(s1);
+	auto tree2 = BinaryTree<int>(s2);
+	{
+		TestGroup<std::string> test("BINARY TREE: Leetcode style CTOR (1)");
+		test.run_test("BFS equality:", 			"[1,null,2,3]", tree.BFS_ToString());
+		test.run_test("DFS (preorder) equality:", 	"[1,2,3]", 	tree.DFS_PreOrderToString());
+		test.run_test("DFS (inorder) equality:", 	"[1,3,2]", 	tree.DFS_InOrderToString());
+		test.run_test("DFS (postorder) equality:", 	"[3,2,1]", 	tree.DFS_PostOrderToString());
+	}
+
+	{
+		TestGroup<std::string> test2("BINARY TREE: Leetcode style CTOR (2)");
+		test2.run_test("BFS equality:", 		"[1,2,3,4,5,null,8,null,null,6,7,9]", tree2.BFS_ToString());
+		test2.run_test("DFS (preorder) equality:", 	"[1,2,4,5,6,7,3,8,9]", 	tree2.DFS_PreOrderToString());
+		test2.run_test("DFS (inorder) equality:", 	"[4,2,6,5,7,1,3,9,8]", 	tree2.DFS_InOrderToString());
+		test2.run_test("DFS (postorder) equality:", 	"[4,6,7,5,2,9,8,3,1]", 	tree2.DFS_PostOrderToString());
+	}
+
+
+
 }
 
 
@@ -64,7 +72,7 @@ void test_LinkedList() {
 	LinkedList<int> list;
 
 TEST_LL_ADD_REMOVE: {
-		TestGroup<std::string> test("LINKED LIST: insert/delete", true);
+		TestGroup<std::string> test("LINKED LIST: insert/delete");
 		list.push_back(4)->push_back(5)->push_back(6)->push_back(7);
 		test.run_test("push_back()", "[4,5,6,7]", list.to_str());
 
@@ -82,7 +90,7 @@ TEST_LL_ADD_REMOVE: {
 	}
 
 TEST_LL_UTILITY: {
-		TestGroup<bool> utility("LINKED LIST: utility", false);
+		TestGroup<bool> utility("LINKED LIST: utility", {.verbose = false});
 
 		list = {};
 		utility.run_test("empty() 1", true, list.empty());
@@ -113,16 +121,17 @@ void print_summary_info() {
 	size_t N_TEST_GROUPS = N_PASSED_GROUPS + N_FAILED_GROUPS;
 	size_t N_TESTS = N_PASSED_TESTS + N_FAILED_TESTS;
 
-	std::string title_color = ansi::green;
-	if (N_FAILED_GROUPS) title_color = ansi::red;
+	ansi::fmt title_color = ansi::fg_green;
+	if (N_FAILED_GROUPS) title_color = ansi::fg_red;
 
-	std::string body_color = ansi::reset;
-	if (N_FAILED_GROUPS) body_color = ansi::red;
-
-
+	ansi::fmt body_color = ansi::reset;
+	if (N_FAILED_GROUPS) body_color = ansi::fg_red;
 
 
-	std::cout << title_color << ansi::bold << ansi::inverse
+
+
+	std::cout << title_color;
+	std::cout << ansi::bold << ansi::inverse
 	          << "TESTS SUMMARY:\n" << ansi::reset;
 	std::cout << body_color << ansi::bold;
 	printf("    test groups: %zu/%zu completed successfully.\n", N_PASSED_GROUPS,  N_TEST_GROUPS);
@@ -135,14 +144,14 @@ void test_LM_UTILS() {
 	std::cout << "\n";
 
 	{
-		TestGroup<std::string> string_split("LM::String functions", true);
+		TestGroup<std::string> string_split("LM::String functions");
 		std::string str = "1,2,3";
 		auto& vec = LM::string::split(str, ',');
 		string_split.run_test("split[0]", "1", vec[0]);
 		string_split.run_test("split[1]", "2", vec[1]);
 		string_split.run_test("split[2]", "3", vec[2]);
 		string_split.run_test("split[3]", "", "");
-		TestGroup<int> string_split_len_test("LM::String Split Length Check", true);
+		TestGroup<int> string_split_len_test("LM::String Split Length Check");
 		string_split_len_test.run_test("split len", 3, vec.size());
 	}
 }
