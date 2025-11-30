@@ -182,7 +182,7 @@ struct LinkedList {
 		while (current) {
 			if (seen.contains(current)) {
 				// locate the cycle
-				oss << ansi::red;
+				oss << ansi::fg_red;
 				break;
 			}
 			seen.insert(current);

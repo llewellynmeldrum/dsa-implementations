@@ -11,6 +11,7 @@
 #include <string.h>
 #include <log.hpp>
 
+#include "config.hpp"
 #include "ansi_colors.hpp"
 #include "LMUtils.hpp"
 
@@ -19,28 +20,36 @@ extern size_t N_FAILED_TESTS;
 extern size_t N_PASSED_GROUPS;
 extern size_t N_FAILED_GROUPS;
 
+struct TestGroupConfig {
+	const bool noHeader = false;
+	const bool verbose = CFG::instance().testgroup_verbose_default;
+	// a loud testgroup ignores any verbosity settings in the config.
+};
+
 
 template<typename T>
 class TestGroup {
   public:
 	using srcloc = std::source_location;
 	std::string suite_name;
-	bool verbose = false;
+	TestGroupConfig cfg;
 	size_t pass_count = 0;
 	size_t fail_count = 0;
 	std::vector<std::string> passed_test_names;
 	std::vector<std::string> failed_test_names;
 
-	TestGroup(std::string name, bool verbose = false) : suite_name(name), verbose(verbose) {
-		std::cerr << LM::TERM::getLineBreak("-");
+	TestGroup(std::string name, TestGroupConfig cfg = {}) : suite_name(name), cfg(cfg) {
+		if (!cfg.noHeader) {
+			if (cfg.verbose) std::cerr << LM::TERM::getLineBreak("-");
 
-		std::cerr << ansi::bold << ansi::inverse
-		          << "TEST GROUP:" << ansi::reset << " "
-		          << ansi::underline << name << ansi::reset;
+			std::cerr << ansi::bold << ansi::inverse
+			          << "TEST GROUP:" << ansi::reset << " "
+			          << ansi::underline << name << ansi::reset;
 
-		std::cerr << ansi::bold;
-		if (verbose) std::cerr << " (VERBOSE)\n";
-		else std::cerr << "\n";
+			std::cerr << ansi::bold;
+			if (cfg.verbose) std::cerr << " (VERBOSE)\n";
+			else std::cerr << "\n";
+		}
 
 		std::cerr << ansi::reset;
 	};
@@ -55,22 +64,22 @@ class TestGroup {
 		std::ostringstream oss;
 		oss << ansi::bold;
 		if (fail_count == 0) {
-			oss << ansi::green << suite_name << " --> "
+			oss << ansi::fg_green << suite_name << " --> "
 			    << "all " << pass_count << " test(s) succeeded:\n" << ansi::reset;
-			oss << ansi::green;
+			oss << ansi::fg_green;
 			for (std::string name : passed_test_names) {
 				oss << name << ", ";
 			}
 			oss << std::endl;
 		} else {
-			oss << ansi::red
+			oss << ansi::fg_red
 			    << pass_count << "/" << pass_count + fail_count << " test(s) passed:\n" << ansi::reset;
-			oss << ansi::green;
+			oss << ansi::fg_green;
 			for (std::string name : passed_test_names) {
 				oss << name << ", ";
 			}
 
-			oss << ansi::red;
+			oss << ansi::fg_red;
 			for (std::string name : failed_test_names) {
 				oss << name << ", ";
 			}
@@ -91,7 +100,7 @@ class TestGroup {
 			++N_FAILED_TESTS;
 			return false;
 		} else {
-			if (verbose) log_success(name, expects, result);
+			if (cfg.verbose) log_success(name, expects, result);
 			passed_test_names.push_back(name);
 		}
 
@@ -104,33 +113,51 @@ class TestGroup {
   private:
 
 	void log_success(std::string name, T expects, T result) {
-		std::cerr        << ansi::green <<  "\nTEST '" << ansi::reset << name
-		                 << ansi::green << "' PASSED:\n" << ansi::reset;
-		std::cerr << ansi::bold << ansi::green << "\tEXPECTED --> " << ansi::reset << val_to_str(expects) << std::endl ;
-		std::cerr << ansi::bold << ansi::green << "\t     GOT --> " << ansi::reset << val_to_str(result) << std::endl ;
+		std::string bold_green = ansi::bold;
+		bold_green += ansi::fg_green;
+		LM::LOG_STREAM(
+		    ansi::fg_green, "\nTEST '",
+		    ansi::reset, name,
+		    ansi::fg_green, "' PASSED:\n", ansi::reset
+		);
+
+		LM::LOG_STREAM(
+		    bold_green, "\tEXPECTED --> ", ansi::reset, val_to_str(expects), "\n",
+		    bold_green, "\t     GOT --> ", ansi::reset, val_to_str(result), "\n"
+		);
 	}
 
 	void log_failure(std::string name, T expects, T result, srcloc err) {
 		int rnu = err.line() - LM::get_line_number(err.file_name(), err.function_name());
-		std::cerr << ansi::reset
-		          << ansi::red <<  "\nTEST " << ansi::reset
-		          << name
-		          << ansi::red << " FAILED: "
-		          << ansi::underline << err.file_name() << ':' << err.line() << std::endl
-		          << ansi::reset << ansi::red << "IN FUNCTION: "
-		          << ansi::underline  << err.function_name() << ":" << rnu << std::endl
-		          << ansi::reset;
+		std::string bold_red = ansi::bold;
+		bold_red += ansi::fg_red;
 
-		std::cerr << ansi::bold << ansi::red << "\tEXPECTED --> " << ansi::reset << val_to_str(expects) << std::endl ;
-		std::cerr << ansi::bold << ansi::red << "\t     GOT --> " << ansi::reset << val_to_str(result) << std::endl ;
+		LM::LOG_STREAM(
+		    ansi::fg_red,  "\nTEST ", ansi::reset, name, ansi::fg_red, " FAILED: ",
+		    ansi::underline, err.file_name(), ':', err.line(), "\n",
+		    ansi::reset
+		);
+
+		LM::LOG_STREAM(
+		    ansi::fg_red, "IN FUNCTION: ", ansi::underline, err.function_name(), ":", rnu, "\n",
+		    ansi::reset
+		);
+
+		LM::LOG_STREAM(
+		    bold_red, "\tEXPECTED --> ", ansi::reset, val_to_str(expects), "\n"
+		);
+
+		LM::LOG_STREAM(
+		    bold_red,  "\t     GOT --> ", ansi::reset, val_to_str(result), "\n"
+		);
 		if constexpr (std::is_same_v<std::string, T>) {
-			std::cerr << "\t              " << markDiff(expects, result) << std::endl << ansi::reset ;
+			std::cerr << "\t              " << differenceLine(expects, result) << std::endl << ansi::reset ;
 		}
 
 
 	}
 
-	std::string markDiff(std::string expected, std::string result) {
+	std::string differenceLine(std::string expected, std::string result) {
 
 		constexpr const char POISON_CH = 0x7F;
 		constexpr const char MARK = '^';
@@ -150,7 +177,7 @@ class TestGroup {
 
 		assert(expected.size() == result.size());
 		std::ostringstream marker_line;
-		marker_line << ansi::red;
+		marker_line << ansi::fg_red;
 		for (int i = 0; i < expected.size(); i++) {
 			if (expected[i] == result[i]) marker_line << ' ';
 			else {
@@ -167,22 +194,24 @@ class TestGroup {
 
 	std::string val_to_str(const T val) const {
 		// handle some special cases
-		std::ostringstream prefix;
-		std::ostringstream suffix;
+		std::string prefix;
+		std::string suffix;
 		std::ostringstream oss;
 		if constexpr(std::is_same_v<T, bool>) {
 			oss << (val == true ? "TRUE" : "FALSE");
 		} else if constexpr (std::is_same_v<T, std::string>) {
+			prefix = "'";
+			suffix = "'";
+
 			std::ostringstream val_str;
-			prefix << "'";
-			suffix << "'";
 			val_str << val;
 			oss << LM::string::toLiterals(val_str.str());
 		} else {
 			oss << val;
 		}
 
-		return prefix.str() +  oss.str() + suffix.str() + ansi::reset;
+		suffix += ansi::reset;
+		return prefix +  oss.str() + suffix;
 	}
 
 

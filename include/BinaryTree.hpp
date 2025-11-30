@@ -71,9 +71,7 @@ struct BinaryTree {
 			BinaryTree();
 		}
 
-		std::cout << s << std::endl;
 		s = LM::string::trim(s, " \r\n\t");
-		std::cout << s << std::endl;
 
 		auto remainingStringsAreNull = [](const std::vector<std::string> &arr, size_t start) {
 			for (int i = start; i < arr.size(); i++) {
