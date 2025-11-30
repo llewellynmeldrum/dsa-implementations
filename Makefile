@@ -72,8 +72,8 @@ debug: $(EXE)
 
 	
 # Address san: lower overhead than thread-san, cleaner stack traces,
-asan: CXXFLAGS  += -fsanitize=address -fno-omit-frame-pointer
-asan: LDFLAGS += -fsanitize=address
+asan: CXXFLAGS  += -fsanitize=address -fno-omit-frame-pointer -g
+asan: LDFLAGS += -fsanitize=address -g
 asan: LDLIBS  += -fsanitize=address
 asan: ASAN_OPTIONS += abort_on_error=1
 asan: clean run 
