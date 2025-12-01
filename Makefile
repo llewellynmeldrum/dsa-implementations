@@ -6,6 +6,12 @@
 # 3. include any libs through ldlibs, prefer using $(shell pkg-config <name>) pattern
 # 4. Offer options to debug segfaults, using adsan, usan, etc
 # Do all of the above, but also make it pretty with fancy tput headers lol
+#
+
+
+N_CORES+= 10
+MAKEFLAGS+= -j$(N_CORES)
+# i use a 10 core machine
 all: $(EXE)
 
 EXE_DIR	:=bin
