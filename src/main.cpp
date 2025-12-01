@@ -14,6 +14,7 @@ void test_Graphs();
 void test_LM_UTILS();
 
 int main() {
+
 	test_LinkedList();
 	test_BinaryTree();
 	test_Graphs();
@@ -24,16 +25,66 @@ int main() {
 
 
 void test_Graphs() {
+	using testing_t = DirectedGraph<int> &;
+	// remove later V
 	CFG::instance().testgroup_verbose_default = true;
-	DirectedGraph<int> basic("[[1,2],[1,3],[1,4],[3,1]]");
-	DirectedGraph<int> empty("[]");
-	DirectedGraph<int> one_node("[[1,null]]");
+
+	// test cases verified on https://graphonline.top/en/
+	DirectedGraph<int> g0("g0", "[]");
+	DirectedGraph<int> g1("g1", "[[1,2],[1,3],[1,4],[3,1]]");
+	DirectedGraph<int> g2("g2", "[[1,2],[1,3],[2,4],[2,5],[3,6],[5,6]]");
+	DirectedGraph<int> g3("g3", "[[1,2],[1,3],[2,4],[3,4],[4,1],[4,5],[5,3]]");
+	DirectedGraph<int> g4("g4",
+	                      "[[1,2],[1,3],[1,6],[1,7],[1,8],"
+	                      "[2,4],"
+	                      "[3,4],[3,11],[3,12],"
+	                      "[4,1],[4,5],"
+	                      "[5,3],"
+	                      "[7,2],"
+	                      "[8,3],[8,6],"
+	                      "[10,4],"
+	                      "[11,2]]"
+	                     );
+
 	{
 		TestGroup<std::string> test("DIRECTED GRAPH: Leetcode style CTOR, test adjacency list equality (1)");
-		test.run_test("Empty graph", "", empty.adjacencyListToStr());
-		test.run_test("Lonely node", "1->[0]", one_node.adjacencyListToStr());
-		test.run_test("Basic case", "1->[2,3,4], 2->[], 3->[1], 4->[]", basic.adjacencyListToStr());
+		test.run_test("g0", "", g0.adjacencyListToStr());
+		test.run_test("g1", "1->[2,3,4], 2->[], 3->[1], 4->[]", g1.adjacencyListToStr());
+		test.run_test("g2", "1->[2,3], 2->[4,5], 3->[6], 4->[], 5->[6], 6->[]", g2.adjacencyListToStr());
+		test.run_test("g3", "1->[2,3], 2->[4], 3->[4], 4->[1,5], 5->[3]", g3.adjacencyListToStr());
+		test.run_test("g4",
+		              "1->[2,3,6,7,8], "
+		              "2->[4], "
+		              "3->[4,11,12], "
+		              "4->[1,5], "
+		              "5->[3], "
+		              "6->[], "
+		              "7->[2], "
+		              "8->[3,6], "
+		              "9->[], "
+		              "10->[4], "
+		              "11->[2], "
+		              "12->[]", g4.adjacencyListToStr());
+	} {
+		TestGroup<std::string> test("DIRECTED GRAPH: Breadth first traversal (level order)");
+		test.run_test("g0", "[]", g0.BFStoString());
+		test.run_test("g1", "[1,2,3,4]", g1.BFStoString());
+		test.run_test("g2", "[1,2,3,4,5,6]", g2.BFStoString());
+		test.run_test("g3", "[1,2,3,4,5]", g3.BFStoString());
+		test.run_test("g4", "[1,2,3,6,7,8,4,11,12,5]", g4.BFStoString());
+
 	}
+	/*
+	{
+		TestGroup<std::string> test("DIRECTED GRAPH: Depth first traversal");
+		test.run_test("g0", "[]", g0.DFStoString());
+		test.run_test("g1", "[1,2,3,4]", g1.DFStoString());
+		test.run_test("g2", "[1,2,4,5,6,3]", g2.DFStoString());
+		test.run_test("g3", "[1,2,4,5,3]", g3.DFStoString());
+		test.run_test("g4", "[1,2,4,5,3,11,12,6,7,8]", g4.DFStoString());
+
+	}
+	*/
 	CFG::instance().testgroup_verbose_default = false;
 }
 

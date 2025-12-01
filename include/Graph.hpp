@@ -1,3 +1,5 @@
+#include <iostream>
+#include <queue>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -5,44 +7,112 @@
 
 template <typename T>
 struct DirectedGraph {
+
 	struct Node {
-		Node *child;
-		Node(Node* child = nullptr): child(child) {};
+		T val = -1;
+		double weight = 1.0;
 	};
+	Node *root = nullptr;
+	std::vector<Node> nodes{};
 
-
-	using index_t = size_t;
+	using index_t = T;
 	using child_set_t = std::unordered_set<size_t>;
 	std::unordered_map<index_t, child_set_t> adjacencyList;
+
 
 	void addAdjacency(index_t parent_index, index_t child_index) {
 		if ( !adjacencyList.contains(parent_index) ) {
 			adjacencyList[parent_index] = {};
 			adjacencyList[parent_index].insert(child_index);
+			if (!root) {
+				root = new Node{parent_index};
+				nodes.push_back(*root);
+			} else {
+				nodes.push_back(Node{parent_index});
+			}
+
 		} else  {
 			auto& children = adjacencyList[parent_index];
 			children.insert(child_index);
 		}
 	}
-	inline std::string adjacencyListToStr();
 
-	// goal: parse following form into adjacency list
-	// [[2,4],[1,3],[2,4],[1,3]]
-	void logError(std::string s, std::string err);
+	std::string BFStoString();
+	std::string DFStoString() {
+		return "";
+	};
 
 	DirectedGraph() {}
-	DirectedGraph(std::string s);
-	~DirectedGraph() {};
+	DirectedGraph(std::string name, std::string s);
+	DirectedGraph(std::string s): DirectedGraph("unnamed", s) {};
+
+	~DirectedGraph() {
+		delete root;
+	};
+
+
+	// utility/testing
+	void logNotice(std::string s, std::string err);
+	inline std::string adjacencyListToStr();
+  private:
+	std::string debug_name;
+	static constexpr bool noticesEnabled = true;
 };
 
 
+template<typename T>
+std::string DirectedGraph<T>::BFStoString() {
+
+	if (!root) return "[]";
+	std::ostringstream oss;
+	std::queue<int> q{};
+	LM::hash_set<int> processed{};
+	LM::hash_set<int> discovered{};
+
+
+	q.push(root->val);
+	if (adjacencyList.contains(root->val) == false) {
+		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
+	}
+	while (q.empty() == false) {
+		int neighbour_count = q.size();
+		LM::min_heap<int> minHeap{};
+		for (int i = 0; i < neighbour_count; i++) {
+			auto parent_id = LM::pop_front(q);
+			if (!processed.contains(parent_id)) {
+				minHeap.push(parent_id);
+			} else {
+			}
+
+			for (index_t child_id : adjacencyList.at(parent_id)) {
+				if (!discovered.contains(child_id)) {
+					discovered.insert(child_id);
+					q.push(child_id);
+				}
+
+			}
+			processed.insert(parent_id);
+		}
+		// test cases expect ascending order per level
+		while (minHeap.empty() == false) {
+			oss << LM::pop_top(minHeap) << ",";
+		}
+	}
+
+	std::string res = oss.str();
+	// trim last comma
+	res.erase(res.size() - 1, 1);
+	return "[" + res + "]";
+}
 // Constructs a directed graph from a leetcode style edge list.
 // - i.e `"[[[1,2]],[[2,3]],[[3,1]]]"`:
 // - ╭──▶① ────▶② ──╮
 // - ╰──────③ ◀─────╯
 // - Any whitespace is ignored.
+// ^ no it doesnt you fucking liar
 template <typename T>
-DirectedGraph<T>::DirectedGraph(std::string s) {
+DirectedGraph<T>::DirectedGraph(std::string name, std::string s) {
+	this->debug_name = name;
 	bool error;
 	if (s.size() <= 7) {
 		// smallest possible is [[a,b]] (7 chars)
@@ -50,10 +120,11 @@ DirectedGraph<T>::DirectedGraph(std::string s) {
 	}
 	std::vector<std::pair<int, int>> pairs{};
 	if (s[0] != '[' || s[s.size() - 1] != ']') {
-		logError(s, "Missing opening/closing square braces.\n");
+		logNotice(s, "Missing opening/closing square braces.\n");
 		DirectedGraph();
 	}
 
+	bool FOUND_ROOT = false;
 	int left_edge = 1;
 //		std::cout << "Parsing begun for '" << s << "'\n";
 	for (int iter = 1; iter <= 100; iter++) {
@@ -65,20 +136,13 @@ DirectedGraph<T>::DirectedGraph(std::string s) {
 //			std::cout << "| Pair: {'" << string_pair << "'}";
 		std::vector<std::string> &tokens = LM::string::split(string_pair, ',');
 		if (tokens.size() != 2) {
-			if (tokens.size() == 0) {
-				DirectedGraph();
-				break;
-			}
-			logError(s, "Adjacency pair includes !=2 elements:\n");
+			logNotice(s, "Adjacency pair includes !=2 elements:\n");
 			DirectedGraph();
 			break;
 		}
-//			std::cout << "| Tokens:";
-//			std::cout << '{';
 		for (std::string& a : tokens) {
-//				std::cout << "'"<< a <<"', ";
+//			std::cout << "'" << a << "', ";
 		}
-//			std::cout << "}\n";
 		size_t parent_idx = atol(tokens[0].c_str());
 		size_t child_idx = atol(tokens[1].c_str());
 		// add an empty one for any mentioned children
@@ -91,9 +155,11 @@ DirectedGraph<T>::DirectedGraph(std::string s) {
 
 }
 template <typename T>
-void DirectedGraph<T>::logError(std::string s, std::string err) {
-	fprintf(stderr, "Failed to parse input to Graph ctor (%s): %s Initializing as empty.\n", s.c_str(), err.c_str());
+void DirectedGraph<T>::logNotice(std::string s, std::string err) {
+	if (noticesEnabled)
+		fprintf(stderr, "Failed to parse input to Graph ctor (%s): %s Initializing as empty.\n", s.c_str(), err.c_str());
 }
+
 template <typename T>
 inline std::string DirectedGraph<T>::adjacencyListToStr() {
 	std::vector<std::string> orderedAdjacencyList({});

@@ -9,7 +9,6 @@
 #include <string_view>
 #include <type_traits>
 #include <string.h>
-#include <log.hpp>
 
 #include "config.hpp"
 #include "ansi_colors.hpp"
@@ -115,15 +114,15 @@ class TestGroup {
 	void log_success(std::string name, T expects, T result) {
 		std::string bold_green = ansi::bold;
 		bold_green += ansi::fg_green;
-		LM::LOG_STREAM(
+		LM::cerr(
 		    ansi::fg_green, "\nTEST '",
 		    ansi::reset, name,
-		    ansi::fg_green, "' PASSED:\n", ansi::reset
+		    ansi::fg_green, "' PASSED:", ansi::reset
 		);
 
-		LM::LOG_STREAM(
-		    bold_green, "\tEXPECTED --> ", ansi::reset, val_to_str(expects), "\n",
-		    bold_green, "\t     GOT --> ", ansi::reset, val_to_str(result), "\n"
+		LM::cerr(
+		    bold_green, "    EXPECTED --> ", ansi::reset, val_to_str(expects), "\n",
+		    bold_green, "         GOT --> ", ansi::reset, val_to_str(result), "\n"
 		);
 	}
 
@@ -132,29 +131,27 @@ class TestGroup {
 		std::string bold_red = ansi::bold;
 		bold_red += ansi::fg_red;
 
-		LM::LOG_STREAM(
+		LM::cerr(
 		    ansi::fg_red,  "\nTEST ", ansi::reset, name, ansi::fg_red, " FAILED: ",
 		    ansi::underline, err.file_name(), ':', err.line(), "\n",
 		    ansi::reset
 		);
 
-		LM::LOG_STREAM(
+		LM::cerr(
 		    ansi::fg_red, "IN FUNCTION: ", ansi::underline, err.function_name(), ":", rnu, "\n",
 		    ansi::reset
 		);
 
-		LM::LOG_STREAM(
+		LM::cerr(
 		    bold_red, "\tEXPECTED --> ", ansi::reset, val_to_str(expects), "\n"
 		);
 
-		LM::LOG_STREAM(
+		LM::cerr(
 		    bold_red,  "\t     GOT --> ", ansi::reset, val_to_str(result), "\n"
 		);
 		if constexpr (std::is_same_v<std::string, T>) {
 			std::cerr << "\t              " << differenceLine(expects, result) << std::endl << ansi::reset ;
 		}
-
-
 	}
 
 	std::string differenceLine(std::string expected, std::string result) {

@@ -2,6 +2,7 @@
 #include "ansi_colors.hpp"
 #include <iostream>
 #include <fstream>
+#include <queue>
 #include <source_location>
 #include <fmt/core.h>
 #include <sstream>
@@ -9,6 +10,7 @@
 #include <utility>
 #include <array>
 #include <vector>
+#include <unordered_set>
 #include <sys/ioctl.h>
 
 
@@ -29,11 +31,56 @@ class CFG {
 };
 
 
+// C++ STL SUCKS AT NAMING THINGS:
+template<typename T>
+using hash_set = std::unordered_set<T>;
+
+template<typename T, typename U>
+using hash_map = std::unordered_map<T, U>;
+
+template<typename T>
+using max_heap = std::priority_queue<T, std::vector<T>, std::less<T >>;
+
+template<typename T>
+using min_heap = std::priority_queue<T, std::vector<T>, std::greater<T >>;
+
+// how pop shouldve been.
+template <typename T>
+T pop_front(std::queue<T> &q) {
+	assert(!q.empty());
+	T value = std::move(q.front());
+	q.pop();
+	return value;
+}
+
+template <typename T>
+T pop_top(LM::min_heap<T> &q) {
+	assert(!q.empty());
+	T value = std::move(q.top());
+	q.pop();
+	return value;
+}
 
 template <typename... Args>
-inline void LOG_STREAM(Args&&... args) {
-	(CFG::get().log_ostream << ... << args);
+inline void cerr(Args&&... args) {
+	(std::cerr << ... << args);
+	std::cerr << std::endl;
 }
+
+template <typename... Args>
+inline void log(Args&&... args) {
+	std::cerr << ansi::fg_red;
+	(std::cerr << ... << args);
+	std::cerr << ansi::reset << std::endl;
+}
+
+template <typename... Args>
+inline void log_bold(Args&&... args) {
+	std::cerr << ansi::bold;
+	(std::cerr << ... << args);
+	std::cerr << ansi::reset << std::endl;
+}
+
 
 static constexpr int ERROR = -1;
 
@@ -47,7 +94,7 @@ class TERM {
 	}
 
 
-	static inline std::string getLineBreak(const std::string& s) {
+	static inline std::string getLineBreak(const std::string & s) {
 		std::ostringstream oss;
 		for (int64_t i = 0; i < columnCount(); i++) {
 			oss << s;
@@ -58,7 +105,7 @@ class TERM {
 
 class string {
   public:
-	static inline std::string toHex(const std::string& s) {
+	static inline std::string toHex(const std::string & s) {
 		std::ostringstream hex;
 		for (unsigned char c : s) hex << ' ' << std::hex << (int)c;
 		return hex.str();
@@ -76,7 +123,7 @@ class string {
 	};
 
 
-	static inline std::string toLiterals(const std::string& s, bool prettyPrint = true) {
+	static inline std::string toLiterals(const std::string & s, bool prettyPrint = true) {
 		std::ostringstream oss;
 		std::string fmt_norepl = ansi::reset;
 		std::string fmt_repl = ansi::reset;
@@ -105,18 +152,18 @@ class string {
 	}
 
 /// Returns the substring within `s` that starts at `left`, whose last character is `s[right-1]`
-	static inline std::string between(const std::string& s, size_t left, size_t right) {
+	static inline std::string between(const std::string & s, size_t left, size_t right) {
 		long int pos = left;
 		long int count = right - left;
 		return s.substr(pos, count);
 	}
 
 // Trims whitespace
-	static inline std::string trim(std::string& s, const char c) {
+	static inline std::string trim(std::string & s, const char c) {
 		return trim(s, &""[c]);
 	}
 
-	static inline std::string trim(std::string& s, const std::string targets = " \t\r\n") {
+	static inline std::string trim(std::string & s, const std::string targets = " \t\r\n") {
 		for (int i = 0; i < s.size(); i++) {
 			for (char target : targets) {
 				if (s[i] == target)
@@ -127,7 +174,7 @@ class string {
 		return s;
 	}
 // returns a vector of 'tokens' split by delimiter
-	static inline std::vector<std::string> &split(std::string& s, char delim) {
+	static inline std::vector<std::string> &split(std::string & s, char delim) {
 		auto tokens = new std::vector<std::string>({});
 		if (s.find(delim) == std::string::npos) {
 			return *tokens;
