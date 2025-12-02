@@ -7,6 +7,9 @@ From the Novice requirements:<br>
 - [X] Depth First Search using recursion.
 - [X] Breadth First Search using a while loop. 
 
+# usage
+`make run` to build and run tests
+
 # Cool stuff
 - Implemented optional leetcode testcase style inputs to the binary tree constructor (`BinaryTree<T>(const std::string& s);`)
 - Made testing class to group results and pretty print stuff
