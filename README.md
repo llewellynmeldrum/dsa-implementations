@@ -3,7 +3,7 @@ From the Novice requirements:<br>
 **Implement in either C++ / Java / Python:**
 - [X] A Linked List.
 - [X] A Binary Tree.
-- [ ] A Graph using an Adjacency List.
+- [X] A Graph using an Adjacency List.
 - [X] Depth First Search using recursion.
 - [X] Breadth First Search using a while loop. 
 
@@ -16,3 +16,6 @@ From the Novice requirements:<br>
 - c++20 capable compiler (barely, c++11 with a few modifications)
 - ({fmt})[https://github.com/fmtlib/fmt?tab=readme-ov-file]
 
+
+# References
+- ADM (The Algorithm Design Manual by Steven S Skiena)
