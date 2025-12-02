@@ -17,12 +17,12 @@ struct DirectedGraph {
 	Node *root = nullptr;
 	std::vector<Node> nodes{};
 
-	using index_t = T;
+	using NodeID = T;
 	using child_set_t = std::unordered_set<size_t>;
-	std::unordered_map<index_t, child_set_t> adjacencyList;
+	std::unordered_map<NodeID, child_set_t> adjacencyList;
 
 
-	void addAdjacency(index_t parent_index, index_t child_index) {
+	void addAdjacency(NodeID parent_index, NodeID child_index) {
 		if ( !adjacencyList.contains(parent_index) ) {
 			adjacencyList[parent_index] = {};
 			adjacencyList[parent_index].insert(child_index);
@@ -55,54 +55,69 @@ struct DirectedGraph {
 	void logNotice(std::string s, std::string err);
 	inline std::string adjacencyListToStr();
   private:
-	std::string *traversal_buffer = new std::string();
-	std::string DFS_recursive(int curr_idx, LM::hash_set<int> &processed, LM::hash_set<int> &discovered);
-	std::string debug_name;
 	static constexpr bool noticesEnabled = true;
+
+	enum NodeState {
+		UNDISCOVERED,
+		DISCOVERED,
+		PROCESSED,
+	};
+	std::string *traversal_buffer;
+	std::string debug_name;
+	std::string DFS_rec(int parent_id, LM::hash_map<int, NodeState> &state_of);
 };
 
 
 template<typename T>
 std::string DirectedGraph<T>::DFStoString() {
 	if (!root) return "[]";
-	LM::hash_set<int> processed{};
-	LM::hash_set<int> discovered{};
+
+	LM::hash_map<int, NodeState> state_of{};
+	for (auto&[node_id, _] : adjacencyList) {
+		state_of.insert({node_id, UNDISCOVERED});
+	}
+
 
 	if (adjacencyList.contains(root->val) == false) {
 		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
 	}
 
-	int curr_idx = root->val;
-	DFS_recursive(curr_idx, processed, discovered);
+
+	traversal_buffer = new std::string{};
+	DFS_rec(root->val, state_of);
 	traversal_buffer->erase(traversal_buffer->size() - 1, 1);
-	return "[" + *traversal_buffer + "]";
+
+	auto res = "[" + *traversal_buffer + "]";
+	delete traversal_buffer;
+
+	return res;
 }
 
 template<typename T>
-inline std::string DirectedGraph<T>::DFS_recursive(int parent_id, LM::hash_set<int> &processed, LM::hash_set<int> &discovered) {
+std::string DirectedGraph<T>::DFS_rec(int parent_id, LM::hash_map<int, NodeState> &state_of) {
+	state_of[parent_id] = DISCOVERED;
 
-	if (processed.contains(parent_id) == false) {
-		processed.insert(parent_id);
-		traversal_buffer->append(std::to_string(parent_id) + ",");
+	if (state_of[parent_id] != PROCESSED) {
+		traversal_buffer->append(std::format("{},", parent_id));
 	} else {
 		return "";
 	}
 
-	// test expects ascending order starting from root nodes
-	LM::min_heap<index_t> minHeap{};
-	for (index_t child_id : adjacencyList.at(parent_id)) {
+	LM::min_heap<NodeID> minHeap{};
+	for (NodeID child_id : adjacencyList.at(parent_id)) {
+		// test expects ascending order starting from root nodes
 		minHeap.push(child_id);
 	}
-	while (minHeap.empty() == false) {
-		index_t child_id = LM::pop_top(minHeap);
-		if (discovered.contains(child_id) == false) {
-			discovered.insert(child_id);
-			DFS_recursive(child_id, processed, discovered);
+
+	while (!minHeap.empty()) {
+		int child_id = LM::pop_top(minHeap);
+		if (state_of[child_id] == UNDISCOVERED) {
+			state_of[child_id] = DISCOVERED;
+			DFS_rec(child_id, state_of);
 		}
 	}
 
-	processed.insert(parent_id);
-
+	state_of[parent_id] = PROCESSED;
 	return "";
 }
 
@@ -113,13 +128,7 @@ std::string DirectedGraph<T>::BFStoString() {
 	std::ostringstream oss;
 	std::queue<int> q{};
 
-	enum NodeState {
-		UNDISCOVERED,
-		DISCOVERED,
-		PROCESSED,
-	};
-	using NodeID = int;
-	LM::hash_map<NodeID, NodeState> state_of{};
+	LM::hash_map<int, NodeState> state_of{};
 
 	for (auto&[node_id, _] : adjacencyList) {
 		state_of.insert({node_id, UNDISCOVERED});
@@ -132,15 +141,15 @@ std::string DirectedGraph<T>::BFStoString() {
 		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
 	}
 	while (q.empty() == false) {
-		int level_pop = q.size();
+		int N = q.size();
 		LM::min_heap<int> minHeap{};
-		for (int i = 0; i < level_pop; i++) {
+		for (int i = 0; i < N; i++) {
 			auto parent_id = LM::pop_front(q);
 			if (state_of[parent_id] != PROCESSED) {
 				minHeap.push(parent_id);
 			}
 
-			for (index_t child_id : adjacencyList.at(parent_id)) {
+			for (NodeID child_id : adjacencyList.at(parent_id)) {
 				if (state_of[child_id] == UNDISCOVERED) {
 					state_of[child_id] = DISCOVERED;
 					q.push(child_id);
