@@ -3,6 +3,8 @@
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
+#include <print>
+#include <algorithm>
 #include "LMUtils.hpp"
 
 template <typename T>
@@ -38,9 +40,7 @@ struct DirectedGraph {
 	}
 
 	std::string BFStoString();
-	std::string DFStoString() {
-		return "";
-	};
+	std::string DFStoString();
 
 	DirectedGraph() {}
 	DirectedGraph(std::string name, std::string s);
@@ -55,55 +55,115 @@ struct DirectedGraph {
 	void logNotice(std::string s, std::string err);
 	inline std::string adjacencyListToStr();
   private:
+	std::string *traversal_buffer = new std::string();
+	std::string DFS_recursive(int curr_idx, LM::hash_set<int> &processed, LM::hash_set<int> &discovered);
 	std::string debug_name;
 	static constexpr bool noticesEnabled = true;
 };
 
 
 template<typename T>
-std::string DirectedGraph<T>::BFStoString() {
-
+std::string DirectedGraph<T>::DFStoString() {
 	if (!root) return "[]";
-	std::ostringstream oss;
-	std::queue<int> q{};
 	LM::hash_set<int> processed{};
 	LM::hash_set<int> discovered{};
 
+	if (adjacencyList.contains(root->val) == false) {
+		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
+	}
+
+	int curr_idx = root->val;
+	DFS_recursive(curr_idx, processed, discovered);
+	traversal_buffer->erase(traversal_buffer->size() - 1, 1);
+	return "[" + *traversal_buffer + "]";
+}
+
+template<typename T>
+inline std::string DirectedGraph<T>::DFS_recursive(int parent_id, LM::hash_set<int> &processed, LM::hash_set<int> &discovered) {
+
+	if (processed.contains(parent_id) == false) {
+		processed.insert(parent_id);
+		traversal_buffer->append(std::to_string(parent_id) + ",");
+	} else {
+		return "";
+	}
+
+	// test expects ascending order starting from root nodes
+	LM::min_heap<index_t> minHeap{};
+	for (index_t child_id : adjacencyList.at(parent_id)) {
+		minHeap.push(child_id);
+	}
+	while (minHeap.empty() == false) {
+		index_t child_id = LM::pop_top(minHeap);
+		if (discovered.contains(child_id) == false) {
+			discovered.insert(child_id);
+			DFS_recursive(child_id, processed, discovered);
+		}
+	}
+
+	processed.insert(parent_id);
+
+	return "";
+}
+
+template<typename T>
+std::string DirectedGraph<T>::BFStoString() {
+	if (!root) return "[]";
+
+	std::ostringstream oss;
+	std::queue<int> q{};
+
+	enum NodeState {
+		UNDISCOVERED,
+		DISCOVERED,
+		PROCESSED,
+	};
+	using NodeID = int;
+	LM::hash_map<NodeID, NodeState> state_of{};
+
+	for (auto&[node_id, _] : adjacencyList) {
+		state_of.insert({node_id, UNDISCOVERED});
+	}
+
 
 	q.push(root->val);
+	state_of[root->val] = DISCOVERED;
 	if (adjacencyList.contains(root->val) == false) {
 		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
 	}
 	while (q.empty() == false) {
-		int neighbour_count = q.size();
+		int level_pop = q.size();
 		LM::min_heap<int> minHeap{};
-		for (int i = 0; i < neighbour_count; i++) {
+		for (int i = 0; i < level_pop; i++) {
 			auto parent_id = LM::pop_front(q);
-			if (!processed.contains(parent_id)) {
+			if (state_of[parent_id] != PROCESSED) {
 				minHeap.push(parent_id);
-			} else {
 			}
 
 			for (index_t child_id : adjacencyList.at(parent_id)) {
-				if (!discovered.contains(child_id)) {
-					discovered.insert(child_id);
+				if (state_of[child_id] == UNDISCOVERED) {
+					state_of[child_id] = DISCOVERED;
 					q.push(child_id);
 				}
 
 			}
-			processed.insert(parent_id);
+			state_of[parent_id] = PROCESSED;
 		}
-		// test cases expect ascending order per level
-		while (minHeap.empty() == false) {
+		while (!minHeap.empty()) {
+			// test cases expect ascending order per level.
 			oss << LM::pop_top(minHeap) << ",";
 		}
 	}
 
-	std::string res = oss.str();
-	// trim last comma
-	res.erase(res.size() - 1, 1);
+
+
+	auto res = oss.str();
+	res.erase(res.size() - 1, 1); // trim the final comma
 	return "[" + res + "]";
 }
+
+
+
 // Constructs a directed graph from a leetcode style edge list.
 // - i.e `"[[[1,2]],[[2,3]],[[3,1]]]"`:
 // - ╭──▶① ────▶② ──╮

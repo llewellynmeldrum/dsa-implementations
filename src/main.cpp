@@ -74,7 +74,6 @@ void test_Graphs() {
 		test.run_test("g4", "[1,2,3,6,7,8,4,11,12,5]", g4.BFStoString());
 
 	}
-	/*
 	{
 		TestGroup<std::string> test("DIRECTED GRAPH: Depth first traversal");
 		test.run_test("g0", "[]", g0.DFStoString());
@@ -84,7 +83,6 @@ void test_Graphs() {
 		test.run_test("g4", "[1,2,4,5,3,11,12,6,7,8]", g4.DFStoString());
 
 	}
-	*/
 	CFG::instance().testgroup_verbose_default = false;
 }
 

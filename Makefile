@@ -9,15 +9,17 @@
 #
 
 
+all: $(EXE)
+
 N_CORES+= 10
 MAKEFLAGS+= -j$(N_CORES)
 # i use a 10 core machine
-all: $(EXE)
 
 EXE_DIR	:=bin
 EXE_NAME :=test
 EXE :=$(EXE_DIR)/$(EXE_NAME)
 
+CPP_VER :=c++2b
 
 SRC_DIR	:=src
 OBJ_DIR :=build
@@ -27,7 +29,7 @@ OBJ_EXT :=.o
 
 
 # compiler: goto 1-1 for info on excluding files
-CXX	:=g++
+CXX	:=clang++
 SRC 	:=$(wildcard $(SRC_DIR)/*$(SRC_EXT)) 
 OBJS 	:= $(patsubst $(SRC_DIR)/%$(SRC_EXT),$(OBJ_DIR)/%$(OBJ_EXT),$(SRC))
 
@@ -36,7 +38,7 @@ OBJS 	:= $(patsubst $(SRC_DIR)/%$(SRC_EXT),$(OBJ_DIR)/%$(OBJ_EXT),$(SRC))
 CXXFLAGS	:=-Iinclude $(shell pkg-config --cflags fmt)
 LDFLAGS		:=$(shell pkg-config --libs fmt)
 LDLIBS		:=
-ALLFLAGS	:=-std=c++20 -O0
+ALLFLAGS	:=-std=$(CPP_VER) -O0
 
 ASAN_OPTIONS	:= 
 

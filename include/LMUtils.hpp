@@ -2,16 +2,17 @@
 #include "ansi_colors.hpp"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <queue>
 #include <source_location>
-#include <fmt/core.h>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <array>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 #include <sys/ioctl.h>
+#include <print>
 
 
 
@@ -78,7 +79,7 @@ template <typename... Args>
 inline void log_bold(Args&&... args) {
 	std::cerr << ansi::bold;
 	(std::cerr << ... << args);
-	std::cerr << ansi::reset << std::endl;
+	std::cerr << ansi::reset;
 }
 
 
@@ -210,7 +211,7 @@ inline constexpr std::size_t NOT_FOUND = std::string::npos;
 inline int get_line_number(const char* filename, const char* fn_name) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {
-		fmt::print("Error opening file '{}'. \n", filename);
+		std::println("Error opening file '{}'. ", filename);
 		perror("System error message");
 		return LM::ERROR;
 	}
