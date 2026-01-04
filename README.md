@@ -4,7 +4,7 @@ From the Novice requirements:<br>
 - [X] A Linked List.
 - [X] A Binary Tree.
 - [X] A Graph using an Adjacency List.
-- [X] Depth First Search using recursion.
+- [X] Depth First Search using recursion. (on the adj list graph)
 - [X] Breadth First Search using a while loop. 
 
 # usage
@@ -16,9 +16,7 @@ From the Novice requirements:<br>
 
 # Dependencies 
 - gnu make
-- c++20 capable compiler (barely, c++11 with a few modifications)
-- ({fmt})[https://github.com/fmtlib/fmt?tab=readme-ov-file]
-
+- c++20 capable compiler (i like std::print)
 
 # References
 - ADM (The Algorithm Design Manual by Steven S Skiena)
