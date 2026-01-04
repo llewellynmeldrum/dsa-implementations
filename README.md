@@ -17,12 +17,18 @@ make run
 ./bin/test -v
 # to run in verbose mode.
 # verbose shows each test cases expected and receieved,
-# along with a small diff checker between them:
+# along with a small diff checker between them.
 ``` 
 
 # Cool stuff
 - Implemented optional leetcode testcase style inputs to the binary tree constructor (`BinaryTree<T>(const std::string& s);`)
 - Made testing class to group results and pretty print stuff
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/6532fc05-7734-4ef3-97c0-ad2f6635eed4" />
+
+> above example showing
+> 1. regular, correct test,
+> 2. a verbose, correct test, and
+> 3. an ambiguous verbose test (all incorrect results become verbose output)
 
 # Dependencies 
 - gnu make
