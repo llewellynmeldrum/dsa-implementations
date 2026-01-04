@@ -32,7 +32,10 @@ class CFG {
 };
 
 
-// C++ STL SUCKS AT NAMING THINGS:
+// THE GREAT RENAMING
+template<typename T>
+using array_list = std::vector<T>;
+
 template<typename T>
 using hash_set = std::unordered_set<T>;
 
@@ -45,7 +48,6 @@ using max_heap = std::priority_queue<T, std::vector<T>, std::less<T >>;
 template<typename T>
 using min_heap = std::priority_queue<T, std::vector<T>, std::greater<T >>;
 
-// how pop shouldve been.
 template <typename T>
 T pop_front(std::queue<T> &q) {
 	assert(!q.empty());
@@ -87,7 +89,6 @@ static constexpr int ERROR = -1;
 
 class TERM {
   public:
-// term utils
 	static inline ssize_t columnCount() {
 		struct winsize w;
 		ioctl(0, TIOCGWINSZ, &w);
@@ -174,6 +175,7 @@ class string {
 		}
 		return s;
 	}
+
 // returns a vector of 'tokens' split by delimiter
 	static inline std::vector<std::string> &split(std::string & s, char delim) {
 		auto tokens = new std::vector<std::string>({});
@@ -205,8 +207,6 @@ class string {
 	}
 };
 
-inline constexpr std::size_t NOT_FOUND = std::string::npos;
-
 
 inline int get_line_number(const char* filename, const char* fn_name) {
 	std::ifstream file(filename);
@@ -219,7 +219,7 @@ inline int get_line_number(const char* filename, const char* fn_name) {
 	int line_n = 0;
 	while (std::getline(file, line_buf)) {
 		++line_n;
-		if (line_buf.find(fn_name) != NOT_FOUND ) {
+		if (line_buf.find(fn_name) != std::string::npos) {
 			return line_n;
 		}
 	}

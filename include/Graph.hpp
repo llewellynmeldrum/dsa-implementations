@@ -10,32 +10,33 @@
 template <typename T>
 struct DirectedGraph {
 
+
+	using NodeID = int;
+	using NodeSet = LM::hash_set<NodeID>;
+	using AdjacencyList = LM::hash_map<NodeID, NodeSet>;
 	struct Node {
-		T val = -1;
+		NodeID id = -1;
 		double weight = 1.0;
 	};
+
+	AdjacencyList adjList;
 	Node *root = nullptr;
-	std::vector<Node> nodes{};
+	std::vector<Node> node_list{};
 
-	using NodeID = T;
-	using child_set_t = std::unordered_set<size_t>;
-	std::unordered_map<NodeID, child_set_t> adjacencyList;
-
-
-	void addAdjacency(NodeID parent_index, NodeID child_index) {
-		if ( !adjacencyList.contains(parent_index) ) {
-			adjacencyList[parent_index] = {};
-			adjacencyList[parent_index].insert(child_index);
+	void addAdjacency(NodeID parent_id, NodeID child_id) {
+		if ( !adjList.contains(parent_id) ) {
+			adjList[parent_id] = {};
+			adjList[parent_id].insert(child_id);
 			if (!root) {
-				root = new Node{parent_index};
-				nodes.push_back(*root);
+				root = new Node{parent_id};
+				node_list.push_back(*root);
 			} else {
-				nodes.push_back(Node{parent_index});
+				node_list.push_back(Node{parent_id});
 			}
 
 		} else  {
-			auto& children = adjacencyList[parent_index];
-			children.insert(child_index);
+			auto& children = adjList[parent_id];
+			children.insert(child_id);
 		}
 	}
 
@@ -43,8 +44,8 @@ struct DirectedGraph {
 	std::string DFStoString();
 
 	DirectedGraph() {}
-	DirectedGraph(std::string name, std::string s);
-	DirectedGraph(std::string s): DirectedGraph("unnamed", s) {};
+	DirectedGraph(std::string graph_name, std::string edge_list);
+	DirectedGraph(std::string edge_list): DirectedGraph("unnamed", edge_list) {};
 
 	~DirectedGraph() {
 		delete root;
@@ -54,8 +55,9 @@ struct DirectedGraph {
 	// utility/testing
 	void logNotice(std::string s, std::string err);
 	inline std::string adjacencyListToStr();
+
   private:
-	static constexpr bool noticesEnabled = true;
+	static constexpr bool noticesEnabled = false;
 
 	enum NodeState {
 		UNDISCOVERED,
@@ -73,18 +75,18 @@ std::string DirectedGraph<T>::DFStoString() {
 	if (!root) return "[]";
 
 	LM::hash_map<int, NodeState> state_of{};
-	for (auto&[node_id, _] : adjacencyList) {
+	for (auto&[node_id, _] : adjList) {
 		state_of.insert({node_id, UNDISCOVERED});
 	}
 
 
-	if (adjacencyList.contains(root->val) == false) {
-		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
+	if (adjList.contains(root->id) == false) {
+		LM::log("Error! root is invalid. id=(", root->id, "), does not exist in adjacencyList.");
 	}
 
 
 	traversal_buffer = new std::string{};
-	DFS_rec(root->val, state_of);
+	DFS_rec(root->id, state_of);
 	traversal_buffer->erase(traversal_buffer->size() - 1, 1);
 
 	auto res = "[" + *traversal_buffer + "]";
@@ -103,9 +105,9 @@ std::string DirectedGraph<T>::DFS_rec(int parent_id, LM::hash_map<int, NodeState
 		return "";
 	}
 
+	// test cases expect ascending order starting from root, use minheap.
 	LM::min_heap<NodeID> minHeap{};
-	for (NodeID child_id : adjacencyList.at(parent_id)) {
-		// test expects ascending order starting from root nodes
+	for (NodeID child_id : adjList.at(parent_id)) {
 		minHeap.push(child_id);
 	}
 
@@ -130,26 +132,27 @@ std::string DirectedGraph<T>::BFStoString() {
 
 	LM::hash_map<int, NodeState> state_of{};
 
-	for (auto&[node_id, _] : adjacencyList) {
+	for (auto&[node_id, _] : adjList) {
 		state_of.insert({node_id, UNDISCOVERED});
 	}
 
+	q.push(root->id);
 
-	q.push(root->val);
-	state_of[root->val] = DISCOVERED;
-	if (adjacencyList.contains(root->val) == false) {
-		LM::log("Error! root is invalid. id=(", root->val, "), does not exist in adjacencyList.");
+	if (adjList.contains(root->id) == false) {
+		LM::log("Error! root is invalid. id=(", root->id, "), does not exist in adjacencyList.");
 	}
 	while (q.empty() == false) {
 		int N = q.size();
+		// test cases expect ascending order per level, use minheap. In hindsight: make better tests
 		LM::min_heap<int> minHeap{};
 		for (int i = 0; i < N; i++) {
 			auto parent_id = LM::pop_front(q);
+			state_of[parent_id] = DISCOVERED;
 			if (state_of[parent_id] != PROCESSED) {
 				minHeap.push(parent_id);
 			}
 
-			for (NodeID child_id : adjacencyList.at(parent_id)) {
+			for (NodeID child_id : adjList.at(parent_id)) {
 				if (state_of[child_id] == UNDISCOVERED) {
 					state_of[child_id] = DISCOVERED;
 					q.push(child_id);
@@ -159,7 +162,6 @@ std::string DirectedGraph<T>::BFStoString() {
 			state_of[parent_id] = PROCESSED;
 		}
 		while (!minHeap.empty()) {
-			// test cases expect ascending order per level.
 			oss << LM::pop_top(minHeap) << ",";
 		}
 	}
@@ -212,13 +214,13 @@ DirectedGraph<T>::DirectedGraph(std::string name, std::string s) {
 		for (std::string& a : tokens) {
 //			std::cout << "'" << a << "', ";
 		}
-		size_t parent_idx = atol(tokens[0].c_str());
-		size_t child_idx = atol(tokens[1].c_str());
+		size_t parent_id = atol(tokens[0].c_str());
+		size_t child_id = atol(tokens[1].c_str());
 		// add an empty one for any mentioned children
-		if (!adjacencyList.contains(child_idx)) {
-			adjacencyList.insert({child_idx, {}});
+		if (!adjList.contains(child_id)) {
+			adjList.insert({child_id, {}});
 		}
-		addAdjacency(parent_idx, child_idx);
+		addAdjacency(parent_id, child_id);
 		left_edge = right_edge + 2;
 	}
 
@@ -233,20 +235,20 @@ template <typename T>
 inline std::string DirectedGraph<T>::adjacencyListToStr() {
 	std::vector<std::string> orderedAdjacencyList({});
 
-	auto addAndResize = [](std::vector<std::string> &list, const std::string & ins, size_t idx) {
-		while (idx >= list.size()) {
-			list.resize(idx + 1);
+	auto addAndResize = [](std::vector<std::string> &list, const std::string & ins, size_t id) {
+		while (id >= list.size()) {
+			list.resize(id + 1);
 		}
-		list[idx] = ins;
+		list[id] = ins;
 	};
 
-	for (const auto&[parent_idx, children_indexes] : adjacencyList) {
+	for (const auto&[parent_id, child_id] : adjList) {
 		std::vector<size_t> children{};
-		for (const auto& child_idx : children_indexes) {
-			children.push_back(child_idx);
+		for (const auto& child_id : child_id) {
+			children.push_back(child_id);
 		}
 
-		// children are sorted ascending
+		// children are sorted ascending for test cases
 		std::sort(children.begin(), children.end());
 		std::ostringstream oss;
 		for (int i = 0; i < children.size(); i++) {
@@ -256,7 +258,7 @@ inline std::string DirectedGraph<T>::adjacencyListToStr() {
 			}
 		}
 		// parents edge lists are inserted in ascending order
-		addAndResize(orderedAdjacencyList, oss.str(), parent_idx);
+		addAndResize(orderedAdjacencyList, oss.str(), parent_id);
 	}
 
 	std::ostringstream oss;

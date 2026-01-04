@@ -14,15 +14,10 @@
 #include "ansi_colors.hpp"
 #include "LMUtils.hpp"
 
-extern size_t N_PASSED_TESTS;
-extern size_t N_FAILED_TESTS;
-extern size_t N_PASSED_GROUPS;
-extern size_t N_FAILED_GROUPS;
 
 struct TestGroupConfig {
 	const bool noHeader = false;
-	const bool verbose = CFG::instance().testgroup_verbose_default;
-	// a loud testgroup ignores any verbosity settings in the config.
+	const bool verbose = true;
 };
 
 
@@ -86,7 +81,7 @@ class TestGroup {
 		}
 		return oss.str();
 	}
-#define run_test(name, expected, result) /* wrapper macro to grab source_location::current() */\
+#define run(name, expected, result) /* wrapper macro to grab source_location::current() */\
 	_RUN_TEST(name, expected, result, std::source_location::current())
 
 	inline bool _RUN_TEST(std::string name, T expects, T result, std::source_location loc) {

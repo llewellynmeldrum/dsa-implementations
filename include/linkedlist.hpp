@@ -20,7 +20,7 @@ struct LinkedList {
 
 	~LinkedList () {
 		if (has_cycle()) {
-			clear_beware_cycle();
+			clear_cycle_aware();
 		}
 		clear();
 	}
@@ -110,7 +110,7 @@ struct LinkedList {
 		while (head) remove_head();
 	}
 
-	void clear_beware_cycle() {
+	void clear_cycle_aware() {
 		if (!head) return;
 		while (has_cycle()) {
 			std::unordered_set<ListNode<T>*> seen;
