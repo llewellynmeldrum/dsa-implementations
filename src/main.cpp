@@ -93,7 +93,7 @@ void test_BinaryTree() {
 		test.run("DFS (postorder) equality:", 	"[3,2,1]", 	tree1.DFS_PostOrderToString());
 	}
 	{
-		TestGroup<std::string> test("BINARY TREE: Leetcode style CTOR (2)", {.verbose = auto_verbose});
+		TestGroup<std::string> test("BINARY TREE: Leetcode style CTOR (2)");
 		test.run("BFS equality:", "[1,2,3,4,5,null,8,null,null,6,7,9]", tree2.BFS_ToString());
 		test.run("DFS (preorder) equality:", 	"[1,2,4,5,6,7,3,8,9]", 	tree2.DFS_PreOrderToString());
 		test.run("DFS (inorder) equality:", 	"[4,2,6,5,7,1,3,9,8]", 	tree2.DFS_InOrderToString());
