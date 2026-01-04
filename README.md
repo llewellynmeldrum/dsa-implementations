@@ -8,7 +8,17 @@ From the Novice requirements:<br>
 - [X] Breadth First Search using a while loop. 
 
 # usage
-`make run` to build and run tests
+```bash
+make run
+# to build and run tests
+```
+
+```bash 
+./bin/test -v
+# to run in verbose mode.
+# verbose shows each test cases expected and receieved,
+# along with a small diff checker between them:
+``` 
 
 # Cool stuff
 - Implemented optional leetcode testcase style inputs to the binary tree constructor (`BinaryTree<T>(const std::string& s);`)
