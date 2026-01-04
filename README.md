@@ -12,8 +12,9 @@ From the Novice requirements:<br>
 make run
 # to build and run tests
 ```
-
-```bash 
+```bash
+make run "ARGS=-v"
+# OR 
 ./bin/test -v
 # to run in verbose mode.
 # verbose shows each test cases expected and receieved,
