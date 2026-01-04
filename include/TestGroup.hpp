@@ -34,7 +34,7 @@ class TestGroup {
 
 	TestGroup(std::string name, TestGroupConfig cfg = {}) : suite_name(name), cfg(cfg) {
 		if (!cfg.noHeader) {
-			if (cfg.verbose) std::cerr << LM::TERM::getLineBreak("-");
+			/*if (cfg.verbose) */std::cerr << LM::TERM::getLineBreak("-");
 
 			std::cerr << ansi::bold << ansi::inverse
 			          << "TEST GROUP:" << ansi::reset << " "
