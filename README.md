@@ -29,7 +29,7 @@ make run "ARGS=-v"
 > above example showing
 > 1. regular, correct test,
 > 2. a verbose, correct test, and
-> 3. an ambiguous verbose test (all incorrect results become verbose output)
+> 3. an incorrect test (all incorrect results become verbose output)
 
 # Dependencies 
 - gnu make
